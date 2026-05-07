@@ -1,0 +1,178 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "app_name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TODO"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TODO"
+          }
+        }
+      }
+    },
+    "button.alert.ok" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "button.delete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить"
+          }
+        }
+      }
+    },
+    "button.edit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Редактировать"
+          }
+        }
+      }
+    },
+    "button.share" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поделиться"
+          }
+        }
+      }
+    },
+    "title.alert.error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка"
+          }
+        }
+      }
+    },
+    "title.screen.todo_list" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задачи"
+          }
+        }
+      }
+    },
+    "title.todo_count": {
+        "extractionState": "manual",
+        "localizations": {
+            "en": {
+                "variations": {
+                    "plural": {
+                        "one": {
+                            "stringUnit": {
+                                "state": "translated",
+                                "value": "%lld Task"
+                            }
+                        },
+                        "other": {
+                            "stringUnit": {
+                                "state": "translated",
+                                "value": "%lld Tasks"
+                            }
+                        }
+                    }
+                }
+            },
+            "ru": {
+                "variations": {
+                    "plural": {
+                        "one": {
+                            "stringUnit": {
+                                "state": "translated",
+                                "value": "%lld Задача"
+                            }
+                        },
+                        "few": {
+                            "stringUnit": {
+                                "state": "translated",
+                                "value": "%lld Задачи"
+                            }
+                        },
+                        "many": {
+                            "stringUnit": {
+                                "state": "translated",
+                                "value": "%lld Задач"
+                            }
+                        },
+                        "other": {
+                            "stringUnit": {
+                                "state": "translated",
+                                "value": "%lld Задач"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+  },
+  "version" : "1.2"
+}

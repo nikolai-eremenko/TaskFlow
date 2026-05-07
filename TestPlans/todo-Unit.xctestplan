@@ -1,0 +1,28 @@
+{
+  "configurations" : [
+    {
+      "id" : "20CF7CD1-AA96-48B9-B0F4-FA2BE093E900",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:todo.xcodeproj",
+      "identifier" : "91B1FA242F8E76F700CBC726",
+      "name" : "todo"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:todo.xcodeproj",
+        "identifier" : "9167E1C62FAAFAC2004FB576",
+        "name" : "todoUnitTests"
+      }
+    }
+  ],
+  "version" : 1
+}
