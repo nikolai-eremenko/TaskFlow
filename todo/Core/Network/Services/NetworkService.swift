@@ -8,14 +8,6 @@
 import Foundation
 
 protocol NetworkService {
-
-    func performRequest<T: Decodable>(
-        _ request: AppTarget,
-        traceId: UUID
-    ) async throws -> T
-
-    func performVoidRequest(
-        _ request: AppTarget,
-        traceId: UUID
-    ) async throws
+    func performRequest<T: Decodable>(_ request: AppTarget, traceId: UUID) async throws(CoreError) -> T
+    func performVoidRequest(_ request: AppTarget, traceId: UUID) async throws(CoreError)
 }

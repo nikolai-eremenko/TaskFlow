@@ -12,12 +12,12 @@ protocol CoreDataStorage {
     func performBackgroundTask<T>(
         traceId: UUID,
         _ block: @Sendable @escaping (NSManagedObjectContext) throws -> T
-    ) async throws -> T
+    ) async throws(CoreError) -> T
 
     func performViewTask<T>(
         traceId: UUID,
         _ block: @Sendable @escaping (NSManagedObjectContext) throws -> T
-    ) async throws -> T
+    ) async throws(CoreError) -> T
 
     func viewContext() -> NSManagedObjectContext
 }

@@ -15,8 +15,9 @@ enum TodoListPreviewFactory {
 
         let interactor = TodoListInteractor(
             repository: PreviewTodoRepository(mode: mode),
-            logger: logger,
-            errorMapper: PreviewErrorMapper()
+            voiceInputService: PreviewVoiceInputService(),
+            errorMapper: CoreErrorMapper(),
+            logger: logger
         )
 
         let router = TodoListRouter(

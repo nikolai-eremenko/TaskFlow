@@ -44,6 +44,8 @@ final class TodoCoordinator: TodoCoordinating {
 
     func showTodoList() {
         let viewController = todoListAssembly.makeModule(coordinator: self)
+
+        navigationController.navigationBar.prefersLargeTitles = true
         navigationController.setViewControllers([viewController], animated: false)
 
         logger.debug("Show TodoList", category: .navigation)
@@ -51,23 +53,16 @@ final class TodoCoordinator: TodoCoordinating {
 
     func showCreateTodo(traceId: UUID) {
         let input = TodoDetailsInput(mode: .create)
-
-        let viewController = todoDetailsAssembly.makeModule(
-            input: input,
-            coordinator: self
-        )
+        let viewController = todoDetailsAssembly.makeModule(input: input, coordinator: self)
 
         logger.debug("Show create todo", category: .navigation, traceId: traceId)
+
         navigationController.pushViewController(viewController, animated: true)
     }
 
     func showEditTodo(todoId: UUID, traceId: UUID) {
         let input = TodoDetailsInput(mode: .edit(id: todoId))
-
-        let viewController = todoDetailsAssembly.makeModule(
-            input: input,
-            coordinator: self
-        )
+        let viewController = todoDetailsAssembly.makeModule(input: input, coordinator: self)
 
         logger.debug("Show TodoDetails (edit)", category: .navigation, traceId: traceId)
 

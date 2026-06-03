@@ -73,7 +73,7 @@ final class TodoDetailsViewController: UIViewController {
             )
         }
 
-        return UIBarButtonItem(systemItem: .save, primaryAction: action)
+        return UIBarButtonItem(systemItem: .done, primaryAction: action)
     }()
 
     private lazy var dismissKeyboardTap = UITapGestureRecognizer(
@@ -92,10 +92,18 @@ final class TodoDetailsViewController: UIViewController {
         output?.viewDidLoad()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        navigationController?.setToolbarHidden(true, animated: animated)
+    }
+
     // MARK: - Private methods
 
     private func setupView() {
         navigationItem.rightBarButtonItem = saveButton
+        navigationItem.largeTitleDisplayMode = .never
+
         view.backgroundColor = .systemBackground
         view.addGestureRecognizer(dismissKeyboardTap)
         view.addSubviews([vStackView])
@@ -152,12 +160,10 @@ extension TodoDetailsViewController: TodoDetailsViewInput {
     }
 
     func display(todo: Todo) {
-        Task { @MainActor in
-            titleTextField.text = todo.title
-            descriptionTextView.text = todo.taskDescription
-            dateLabel.text = AppDateFormatters.localizedDateOnly.string(from: todo.createdAt)
-            updatePlaceholder()
-        }
+        titleTextField.text = todo.title
+        descriptionTextView.text = todo.taskDescription
+        dateLabel.text = AppDateFormatters.localizedDateOnly.string(from: todo.createdAt)
+        updatePlaceholder()
     }
 
     func displayCreateState() {
@@ -223,4 +229,18 @@ extension TodoDetailsViewController: UITextViewDelegate {
 
         return true
     }
+}
+
+// MARK: - Preview
+
+#Preview("Edit Todo") {
+    TodoDetailsPreviewFactory.make(.edit)
+}
+
+#Preview("Create Todo") {
+    TodoDetailsPreviewFactory.make(.create)
+}
+
+#Preview("Error") {
+    TodoDetailsPreviewFactory.make(.error)
 }

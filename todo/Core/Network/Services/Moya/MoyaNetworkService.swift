@@ -5,6 +5,7 @@
 //  Created by Nikolai Eremenko on 16.04.2026.
 //
 
+import Alamofire
 import Foundation
 import Moya
 
@@ -36,8 +37,7 @@ final class MoyaNetworkService: NetworkService {
     func performRequest<T: Decodable>(
         _ request: AppTarget,
         traceId: UUID
-    ) async throws -> T {
-        let target = try await makeTarget(request, traceId: traceId)
+    ) async throws(CoreError) -> T {
         let start = Date()
         var metadata = LogMetadataBuilder.from(request)
         let category: LogCategory = .network
@@ -50,6 +50,7 @@ final class MoyaNetworkService: NetworkService {
         )
 
         do {
+            let target = try await makeTarget(request, traceId: traceId)
             let response = try await provider.asyncRequestResponse(target)
             let result = try response.decode(T.self, using: AppJSONCoding.decoder)
             let duration = Date().timeIntervalSince(start)
@@ -85,7 +86,7 @@ final class MoyaNetworkService: NetworkService {
         }
     }
 
-    func performVoidRequest(_ request: AppTarget, traceId: UUID) async throws {
+    func performVoidRequest(_ request: AppTarget, traceId: UUID) async throws(CoreError) {
         let target: MultiTarget
         let start = Date()
         let category: LogCategory = .network
@@ -156,18 +157,21 @@ final class MoyaNetworkService: NetworkService {
         }
 
         if let decodingError = error as? DecodingError {
-            return .networkService(.decodingFailed(underlying: decodingError, data: nil))
+            return .network(.decodingFailed(underlying: decodingError, data: nil))
         }
 
-        return .networkService(.underlying(error))
+        return .network(.underlying(error))
     }
 
     // swiftlint:disable cyclomatic_complexity
     private func mapMoya(_ error: MoyaError) -> CoreError {
+
+        print("Moya error:", error)
+
         switch error {
 
         case .statusCode(let response):
-            return .networkService(
+            return .network(
                 httpStatusMapper.map(
                     statusCode: response.statusCode,
                     data: response.data
@@ -175,31 +179,32 @@ final class MoyaNetworkService: NetworkService {
             )
 
         case .objectMapping(let decodingError, let response):
-            return .networkService(.decodingFailed(underlying: decodingError, data: response.data))
+            return .network(.decodingFailed(underlying: decodingError, data: response.data))
 
         case .jsonMapping(let response):
-            return .networkService(.decodingFailed(underlying: error, data: response.data))
+            return .network(.decodingFailed(underlying: error, data: response.data))
 
         case .stringMapping(let response):
-            return .networkService(.decodingFailed(underlying: error, data: response.data))
+            return .network(.decodingFailed(underlying: error, data: response.data))
 
         case .requestMapping(let message):
-            return .networkService(.requestMappingFailed(underlying: NSError(
+            return .network(.requestMappingFailed(underlying: NSError(
                 domain: "MoyaRequestMapping",
                 code: 0,
                 userInfo: [NSLocalizedDescriptionKey: message]
             )))
 
         case .parameterEncoding(let encodingError):
-            return .networkService(.parameterEncodingFailed(underlying: encodingError))
+            return .network(.parameterEncodingFailed(underlying: encodingError))
 
         case .underlying(let underlyingError, let response):
-            if let urlError = underlyingError as? URLError {
+
+            if let urlError = extractURLError(underlyingError) {
                 return mapURLError(urlError)
             }
 
             if let response = response {
-                return .networkService(
+                return .network(
                     httpStatusMapper.map(
                         statusCode: response.statusCode,
                         data: response.data
@@ -207,18 +212,50 @@ final class MoyaNetworkService: NetworkService {
                 )
             }
 
-            return .networkService(.underlying(underlyingError))
+            return .network(.underlying(underlyingError))
 
         case .encodableMapping(let error):
-            return .networkService(.parameterEncodingFailed(underlying: error))
+            return .network(.parameterEncodingFailed(underlying: error))
 
         case .imageMapping(let response):
-            return .networkService(.client(statusCode: response.statusCode, data: response.data))
+            return .network(.client(statusCode: response.statusCode, data: response.data))
         }
     }
     // swiftlint:enable cyclomatic_complexity
 
     private func mapURLError(_ error: URLError) -> CoreError {
-        return .networkService(urlErrorMapper.map(error))
+        return .network(urlErrorMapper.map(error))
+    }
+
+    private func extractURLError(_ error: Error) -> URLError? {
+        var current: Error? = error
+
+        while let err = current {
+
+            let nsError = err as NSError
+            if nsError.domain == NSURLErrorDomain {
+                return URLError(URLError.Code(rawValue: nsError.code))
+            }
+
+            switch err {
+
+            case let afError as AFError:
+                if case let .sessionTaskFailed(underlying) = afError {
+                    current = underlying
+                    continue
+                }
+
+            case let moya as MoyaError:
+                if case let .underlying(underlying, _) = moya {
+                    current = underlying
+                    continue
+                }
+
+            default:
+                return nil
+            }
+        }
+
+        return nil
     }
 }

@@ -118,11 +118,11 @@ final class DefaultTodoRepositoryTests: XCTestCase {
 
     private func makeSUT() -> (
         sut: DefaultTodoRepository,
-        api: MockTodoAPIService,
+        api: MockTodoRemoteService,
         storage: MockTodoStorage,
         settings: MockSettingsStorage
     ) {
-        let api = MockTodoAPIService()
+        let api = MockTodoRemoteService()
         let storage = MockTodoStorage()
         let settings = MockSettingsStorage()
         let logger = NullLogger()

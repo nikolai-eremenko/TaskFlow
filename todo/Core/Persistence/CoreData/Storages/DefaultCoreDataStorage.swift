@@ -29,7 +29,7 @@ final class DefaultCoreDataStorage: CoreDataStorage {
     func performBackgroundTask<T>(
         traceId: UUID,
         _ block: @Sendable @escaping (NSManagedObjectContext) throws -> T
-    ) async throws -> T {
+    ) async throws(CoreError) -> T {
 
         do {
             let result = try await stack.performBackgroundTask {
@@ -41,16 +41,17 @@ final class DefaultCoreDataStorage: CoreDataStorage {
             return result
 
         } catch {
-            logger.logError(error, category: .persistence, traceId: traceId)
+            let coreError = mapError(error)
+            logger.logError(coreError, category: .persistence, traceId: traceId)
 
-            throw DataError.persistence(mapError(error))
+            throw coreError
         }
     }
 
     func performViewTask<T>(
         traceId: UUID,
         _ block: @Sendable @escaping (NSManagedObjectContext) throws -> T
-    ) async throws -> T {
+    ) async throws(CoreError) -> T {
 
         let context = stack.viewContext
 
@@ -64,9 +65,9 @@ final class DefaultCoreDataStorage: CoreDataStorage {
             return result
 
         } catch {
-            logger.logError(error, category: .persistence, traceId: traceId)
-
-            throw DataError.persistence(mapError(error))
+            let coreError = mapError(error)
+            logger.logError(coreError, category: .persistence, traceId: traceId)
+            throw coreError
         }
     }
 
@@ -76,10 +77,9 @@ final class DefaultCoreDataStorage: CoreDataStorage {
 
     // MARK: - Private methods
 
-    private func mapError(_ error: Error) -> CoreDataStorageError {
-
+    private func mapError(_ error: Error) -> CoreError {
         if let coreDataError = error as? CoreDataStorageError {
-            return coreDataError
+            return CoreError.persistence(coreDataError)
         }
 
         let nsError = error as NSError
@@ -88,15 +88,15 @@ final class DefaultCoreDataStorage: CoreDataStorage {
         case NSCocoaErrorDomain:
             switch nsError.code {
             case NSManagedObjectValidationError:
-                return .saveFailed
+                return CoreError.persistence(.saveFailed)
             case NSManagedObjectConstraintMergeError:
-                return .saveFailed
+                return CoreError.persistence(.saveFailed)
             default:
-                return .contextExecutionFailed
+                return CoreError.persistence(.contextExecutionFailed)
             }
 
         default:
-            return .contextExecutionFailed
+            return CoreError.persistence(.contextExecutionFailed)
         }
     }
 }

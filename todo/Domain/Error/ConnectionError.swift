@@ -15,16 +15,10 @@ enum ConnectionError: Error {
 }
 
 extension ConnectionError {
-
     var logLevel: LogLevel {
         switch self {
-        case .noInternet,
-                .timeout,
-                .connectionLost:
-            return .info
-
-        case .cannotFindHost:
-            return .error
+        case .noInternet, .timeout, .connectionLost:    return .info
+        case .cannotFindHost:                           return .error
         }
     }
 }

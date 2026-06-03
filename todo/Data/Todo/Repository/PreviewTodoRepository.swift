@@ -23,38 +23,33 @@ final class PreviewTodoRepository: TodoRepository {
 
     func observe(traceId: UUID) -> AsyncStream<TodoChange> {
         AsyncStream { continuation in
-
             switch mode {
-
-            case .loaded:
-                continuation.yield(.reload(Self.sampleTodos()))
-
-            case .empty:
-                continuation.yield(.reload([]))
-
-            case .error:
-                continuation.yield(.reload(Self.sampleTodos()))
-                continuation.finish()
+            case .loaded:       continuation.yield(.reload(Self.sampleTodos()))
+            case .empty:        continuation.yield(.reload([]))
+            case .error:        continuation.yield(.reload([]))
             }
         }
     }
 
-    func bootstrapIfNeeded(traceId: UUID) async throws {
+    func bootstrapIfNeeded(traceId: UUID) async throws(DomainError) {
         if mode == .error {
-            throw NSError(domain: "Preview", code: -1)
+            throw DomainError.connection(.noInternet)
         }
     }
 
-    func fetch(id: UUID, traceId: UUID) async throws -> Todo? {
-        if mode == .error { throw NSError(domain: "Preview", code: -1) }
-        return Self.sampleTodos().first { $0.id == id }
+    func fetch(id: UUID, traceId: UUID) async throws(DomainError) -> Todo? {
+        if mode == .error {
+            throw DomainError.storage(.failure)
+        }
+
+        return Self.previewTodo
     }
 
-    func create(todo: Todo, traceId: UUID) async throws {}
-    func update(todo: Todo, traceId: UUID) async throws {}
-    func delete(id: UUID, traceId: UUID) async throws {}
-    func toggleTodoCompletion(id: UUID, traceId: UUID) async throws {}
-    func search(text: String, traceId: UUID) async throws {}
+    func create(todo: Todo, traceId: UUID) async throws(DomainError) {}
+    func update(todo: Todo, traceId: UUID) async throws(DomainError) {}
+    func delete(id: UUID, traceId: UUID) async throws(DomainError) {}
+    func toggleTodoCompletion(id: UUID, traceId: UUID) async throws(DomainError) {}
+    func search(text: String, traceId: UUID) {}
 }
 
 private extension PreviewTodoRepository {
@@ -103,4 +98,19 @@ private extension PreviewTodoRepository {
         "exercitation", "ullamco", "laboris", "nisi", "aliquip",
         "ex", "ea", "commodo", "consequat"
     ]
+
+    private static let previewTodo = Todo(
+        id: UUID(),
+        serverId: nil,
+        title: "Buy groceries for the weekend",
+        taskDescription: """
+    Milk
+    Eggs
+    Bread
+    Cheese
+    Apples
+    """,
+        createdAt: .now,
+        isCompleted: false
+    )
 }

@@ -13,10 +13,10 @@ protocol AuthorizedNetworkService {
         _ request: AppTarget,
         type: T.Type,
         traceId: UUID
-    ) async throws -> T
+    ) async throws(CoreError) -> T
 
     func requestVoidWithAutoRefresh(
         _ request: AppTarget,
         traceId: UUID
-    ) async throws
+    ) async throws(CoreError)
 }

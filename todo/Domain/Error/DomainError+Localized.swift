@@ -15,6 +15,7 @@ extension DomainError: LocalizedError {
         case .server(let error):        return error.errorDescription
         case .storage(let error):       return error.errorDescription
         case .common(let error):        return error.errorDescription
+        case .voiceInput(let error):    return error.errorDescription
         }
     }
 }
@@ -66,6 +67,34 @@ extension StorageError: LocalizedError {
         case .failure:                   return "Не удалось сохранить или загрузить данные"
         case .corruptedData:             return "Данные повреждены. Требуется восстановление"
         case .unavailable:               return "Хранилище недоступно"
+        }
+    }
+}
+
+extension VoiceInputError: LocalizedError {
+
+    var errorDescription: String? {
+        switch self {
+
+            // Open Settings + Cancel
+        case .microphoneDenied:
+            return "Microphone access is disabled."
+
+            // Open Settings + Cancel
+        case .speechRecognitionDenied:
+            return "Speech recognition is disabled."
+
+            // OK
+        case .speechRecognitionRestricted:
+            return "This feature is not available on this device or account."
+
+            // OK + Change language
+        case .recognizerUnavailable:
+            return "Language not supported"
+
+        case .recognitionFailed:             return "Couldn’t recognize speech."
+
+        case .audioUnavailable:               return "Voice input is unavailable."
         }
     }
 }

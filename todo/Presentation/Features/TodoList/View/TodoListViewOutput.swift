@@ -15,4 +15,6 @@ protocol TodoListViewOutput: AnyObject {
     func didSearch(text: String)
     func didTapCreate(traceId: UUID)
     func didTapCheckbox(id: UUID)
+
+    func didTapVoiceSearch(_ traceId: UUID)
 }

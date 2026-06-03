@@ -19,6 +19,9 @@ final class TodoListViewController: UIViewController {
     private var pendingChange: TodoListViewChange?
     private var pendingDelete: (id: UUID, traceId: UUID)?
 
+    private var isVoiceInputActive = false
+    private let emptyInputView = UIView(frame: .zero)
+
     private lazy var dataSource: TodoListDataSource = {
         TodoListDataSource(
             tableView: tableView,
@@ -29,18 +32,19 @@ final class TodoListViewController: UIViewController {
     }()
 
     private lazy var tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .plain)
-        tableView.keyboardDismissMode = .onDrag
+        let tableView = UITableView()
         tableView.delegate = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 90
+        tableView.contentInsetAdjustmentBehavior = .automatic
         tableView.register(TodoListCell.self, forCellReuseIdentifier: TodoListCell.reuseId)
         return tableView
     }()
 
     private lazy var searchController: UISearchController = {
-        let controller = UISearchController(searchResultsController: nil)
-        controller.obscuresBackgroundDuringPresentation = false
+        let controller = UISearchController()
+        controller.searchBar.showsBookmarkButton = true
+        controller.searchBar.setImage(UIImage(systemName: "microphone"), for: .bookmark, state: [])
         controller.searchResultsUpdater = self
         controller.searchBar.delegate = self
         return controller
@@ -52,6 +56,34 @@ final class TodoListViewController: UIViewController {
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
+    }()
+
+    private lazy var composeButton: UIBarButtonItem = {
+        let button = UIButton(type: .system)
+
+        button.setImage(
+            UIImage(systemName: "square.and.pencil"),
+            for: .normal
+        )
+
+        button.addAction(
+            UIAction { [weak self] _ in
+                guard let self else { return }
+
+                let traceId = UUID()
+
+                self.logger.debug(
+                    "Did tap add",
+                    category: .userInterface,
+                    traceId: traceId
+                )
+
+                self.output?.didTapCreate(traceId: traceId)
+            },
+            for: .touchUpInside
+        )
+
+        return UIBarButtonItem(customView: button)
     }()
 
     // MARK: - Init
@@ -69,10 +101,8 @@ final class TodoListViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        setupUI()
+        setupView()
         setupLayout()
-
-        configureToolbarItems()
 
         let traceId = UUID()
         logger.debug("View did load", category: .userInterface, traceId: traceId)
@@ -80,16 +110,10 @@ final class TodoListViewController: UIViewController {
         output?.viewDidLoad(traceId: traceId)
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        navigationItem.searchController = searchController
-        navigationController?.navigationBar.prefersLargeTitles = true
-        navigationController?.setToolbarHidden(false, animated: false)
-    }
-
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
+        setupNavController(animated)
 
         isVisible = true
 
@@ -102,62 +126,87 @@ final class TodoListViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        navigationController?.navigationBar.prefersLargeTitles = false
-        navigationController?.setToolbarHidden(true, animated: false)
-
         isVisible = false
     }
 
     // MARK: - Private Methods
 
-    private func setupUI() {
-        title = String(localized: .titleScreenTodoList)
-
-        definesPresentationContext = true
+    private func setupView() {
 
         view.backgroundColor = .systemBackground
         view.addSubviews([tableView])
     }
 
-    private func configureToolbarItems() {
-        setToolbarItems(
-            [
-                .flexibleSpace(),
+    private func setupNavController(_ animated: Bool) {
+
+        navigationController?.navigationBar.isTranslucent = true
+        navigationController?.setToolbarHidden(false, animated: animated)
+
+        if navigationItem.searchController == nil {
+            navigationItem.searchController = searchController
+        }
+
+        navigationItem.title = String(localized: .titleScreenTodoList)
+        navigationItem.largeTitleDisplayMode = .always
+        navigationItem.hidesSearchBarWhenScrolling = false
+
+        let flexibleSpace = UIBarButtonItem.flexibleSpace()
+
+        if #available(iOS 26.0, *) {
+            setToolbarItems([
+                navigationItem.searchBarPlacementBarButtonItem,
+                flexibleSpace,
+                composeButton
+            ], animated: animated)
+
+        } else {
+            setToolbarItems([
+                flexibleSpace,
                 UIBarButtonItem(customView: countLabel),
-                .flexibleSpace(),
-                UIBarButtonItem(
-                    barButtonSystemItem: .compose,
-                    target: self,
-                    action: #selector(didTapAdd)
-                )
-            ],
-            animated: false
-        )
+                flexibleSpace,
+                composeButton
+            ], animated: animated)
+        }
     }
 
-    // MARK: - Actions
+    private func findBookmarkButton() -> UIButton? {
+        return searchController.searchBar.subviews
+            .flatMap { $0.subviews }
+            .compactMap { $0 as? UIButton }
+            .first
+    }
 
-    @objc
-    private func didTapAdd() {
-        let traceId = UUID()
+    private func setMicPulsing(_ enabled: Bool) {
 
-        logger.debug("Did tap add", category: .userInterface, traceId: traceId)
-        output?.didTapCreate(traceId: traceId)
+        guard let button = findBookmarkButton() else { return }
+
+        button.layer.removeAnimation(forKey: "pulse")
+
+        guard enabled else { return }
+
+        let animation = CABasicAnimation(keyPath: "transform.scale")
+        animation.fromValue = 1.0
+        animation.toValue = 1.2
+        animation.duration = 0.6
+        animation.autoreverses = true
+        animation.repeatCount = .infinity
+
+        button.layer.add(animation, forKey: "pulse")
     }
 
     // MARK: - Constraints
 
     private func setupLayout() {
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            countLabel.widthAnchor.constraint(equalToConstant: 100)
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
 }
+
+// MARK: - TodoListViewInput
 
 extension TodoListViewController: TodoListViewInput {
 
@@ -168,7 +217,11 @@ extension TodoListViewController: TodoListViewInput {
             pendingChange = change
         }
 
-        countLabel.text = String(localized: .titleTodoCount(todosCount))
+        if #available(iOS 26.0, *) {
+            navigationItem.subtitle = String(localized: .titleTodoCount(todosCount))
+        } else {
+            countLabel.text = String(localized: .titleTodoCount(todosCount))
+        }
     }
 
     func showError(message: String) {
@@ -185,6 +238,92 @@ extension TodoListViewController: TodoListViewInput {
             )
         )
         present(alert, animated: true)
+    }
+
+    func updateSearchText(_ text: String) {
+        let searchBar = searchController.searchBar
+
+        guard searchBar.text != text else { return }
+
+        searchBar.text = text
+
+        output?.didSearch(text: text)
+    }
+
+    func setVoiceInputState(_ state: VoiceInputStateUI) {
+        let searchBar = searchController.searchBar
+        let textField = searchBar.searchTextField
+
+        switch state {
+
+        case .idle:
+            isVoiceInputActive = false
+
+            textField.inputView = nil
+            textField.reloadInputViews()
+
+            searchBar.setImage(
+                UIImage(systemName: "microphone"),
+                for: .bookmark,
+                state: .normal
+            )
+
+            searchBar.tintColor = nil
+            setMicPulsing(false)
+
+        case .recording:
+            isVoiceInputActive = true
+
+            // 🔥 search becomes active
+            searchController.isActive = true
+
+            // 🔥 focus text field WITHOUT keyboard
+            textField.inputView = emptyInputView
+            textField.reloadInputViews()
+
+            if !textField.isFirstResponder {
+                textField.becomeFirstResponder()
+            }
+
+            searchBar.setImage(
+                UIImage(systemName: "mic.fill"),
+                for: .bookmark,
+                state: .normal
+            )
+
+            searchBar.tintColor = .systemRed
+            setMicPulsing(true)
+
+        case .processing:
+            searchBar.setImage(
+                UIImage(systemName: "waveform"),
+                for: .bookmark,
+                state: .normal
+            )
+
+            searchBar.tintColor = .systemBlue
+            setMicPulsing(false)
+
+        case .unavailable:
+            searchBar.setImage(
+                UIImage(systemName: "mic.slash"),
+                for: .bookmark,
+                state: .normal
+            )
+
+            searchBar.tintColor = .systemGray
+            setMicPulsing(false)
+
+        case .error:
+            searchBar.setImage(
+                UIImage(systemName: "exclamationmark.mic"),
+                for: .bookmark,
+                state: .normal
+            )
+
+            searchBar.tintColor = .systemOrange
+            setMicPulsing(false)
+        }
     }
 }
 
@@ -265,6 +404,12 @@ extension TodoListViewController: UISearchBarDelegate {
 
     func searchBarCancelButtonClicked( _ searchBar: UISearchBar) {
         output?.didSearch(text: "")
+    }
+
+    func searchBarBookmarkButtonClicked(_ searchBar: UISearchBar) {
+        let traceId = UUID()
+        logger.debug("Did tap microphone", category: .userInterface, traceId: traceId)
+        output?.didTapVoiceSearch(traceId)
     }
 }
 

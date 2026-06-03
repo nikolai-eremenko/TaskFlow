@@ -17,13 +17,13 @@ final class TodoListAssembly {
     }
 
     func makeModule(coordinator: TodoCoordinating) -> UIViewController {
-
         let logger = resolver.resolve(AppLogger.self)!
 
         let interactor = TodoListInteractor(
             repository: resolver.resolve(TodoRepository.self)!,
-            logger: logger,
-            errorMapper: resolver.resolve(ErrorMapper.self)!
+            voiceInputService: resolver.resolve(VoiceInputService.self)!,
+            errorMapper: resolver.resolve(ErrorMapping.self)!,
+            logger: logger
         )
 
         let router = TodoListRouter(

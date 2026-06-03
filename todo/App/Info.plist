@@ -4,6 +4,10 @@
 <dict>
 	<key>APP_ENV</key>
 	<string>$(APP_ENV)</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Need speech recognition for search</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Need microphone access for voice search</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

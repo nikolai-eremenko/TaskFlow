@@ -38,27 +38,62 @@ final class TodoListPresenter {
 extension TodoListPresenter: TodoListInteractorOutput {
 
     func didReceiveChange(_ change: TodoChange) {
-        switch change {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            switch change {
 
-        case .reload(let newTodos):
-            todos = newTodos
+            case .reload(let newTodos):
+                self.todos = newTodos
 
-            let items = todos.map(TodoCellViewModel.init)
-            view?.render(change: .reload(items), todosCount: todos.count)
+                let items = self.todos.map(TodoCellViewModel.init)
+                self.view?.render(change: .reload(items), todosCount: todos.count)
 
-        case .update(let updatedTodo):
-            if let item = todos.firstIndex(where: { $0.id == updatedTodo.id }) {
-                todos[item] = updatedTodo
+            case .update(let updatedTodo):
+                if let item = self.todos.firstIndex(where: { $0.id == updatedTodo.id }) {
+                    todos[item] = updatedTodo
+                }
+
+                let model = TodoCellViewModel(todo: updatedTodo)
+
+                self.view?.render(change: .update(model), todosCount: todos.count)
             }
-
-            let model = TodoCellViewModel(todo: updatedTodo)
-
-            view?.render(change: .update(model), todosCount: todos.count)
         }
     }
 
     func didFail(_ error: DomainError) {
-        view?.showError(message: error.localizedDescription)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            self.view?.showError(message: error.localizedDescription)
+        }
+    }
+
+    func didReceiveVoiceText(_ text: String) {
+        Task { @MainActor in
+            view?.updateSearchText(text)
+
+            // reuse existing pipeline
+            didSearch(text: text)
+        }
+    }
+
+    func didStartVoiceInput() {
+        Task { @MainActor in
+            view?.setVoiceInputState(.recording)
+        }
+    }
+
+    func didStopVoiceInput() {
+        Task { @MainActor in
+            view?.setVoiceInputState(.idle)
+        }
+    }
+
+    func didFailVoiceInput(_ error: DomainError) {
+        Task { @MainActor in
+            view?.showError(message: error.localizedDescription)
+            view?.setVoiceInputState(.idle)
+        }
     }
 }
 
@@ -134,5 +169,16 @@ extension TodoListPresenter: TodoListViewOutput {
     func didTapCreate(traceId: UUID) {
         logger.debug("Create todo flow started", category: .userInterface, traceId: traceId)
         router.openCreateTodo(traceId: traceId)
+    }
+
+    func didTapVoiceSearch(_ traceId: UUID) {
+        let languageCode = Locale.preferredLanguages.first ?? "en-US"
+
+        var metadata = LogMetadataBuilder()
+        metadata.reason(languageCode)
+
+        logger.debug("Voice search started", category: .feature, metadata: metadata.build(), traceId: traceId)
+
+        interactor.startVoiceInput(languageCode: languageCode, traceId)
     }
 }

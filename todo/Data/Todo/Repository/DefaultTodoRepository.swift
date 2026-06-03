@@ -11,22 +11,25 @@ final class DefaultTodoRepository: TodoRepository {
 
     // MARK: - Private properties
 
-    private let api: TodoAPIService
+    private let api: TodoRemoteService
     private let storage: TodoStorage
     private let settingsStorage: SettingsStorage
+    private let errorMapper: ErrorMapping
     private let logger: AppLogger
 
     // MARK: - Init
 
     init(
-        api: TodoAPIService,
+        api: TodoRemoteService,
         storage: TodoStorage,
         settingsStorage: SettingsStorage,
+        errorMapper: ErrorMapping,
         logger: AppLogger
     ) {
         self.api = api
         self.storage = storage
         self.settingsStorage = settingsStorage
+        self.errorMapper = errorMapper
         self.logger = logger
     }
 
@@ -49,7 +52,7 @@ final class DefaultTodoRepository: TodoRepository {
         }
     }
 
-    func bootstrapIfNeeded(traceId: UUID) async throws {
+    func bootstrapIfNeeded(traceId: UUID) async throws(DomainError) {
         logger.debug(
             "Checking if initial remote load is needed",
             category: .persistence,
@@ -68,59 +71,69 @@ final class DefaultTodoRepository: TodoRepository {
         }
 
         logger.debug("Loading initial remote data", category: .persistence, traceId: traceId)
-        let response = try await api.fetchTodos(traceId: traceId)
-        let todos = response.toDomain()
 
-        logger.debug("Saving initial data", category: .persistence, traceId: traceId)
-        try await storage.upsert(todos, traceId: traceId)
+        do {
+            let response = try await api.fetchTodos(traceId: traceId)
+            let todos = response.toDomain()
 
-        logger.debug("Marking initial remote load as completed", category: .persistence, traceId: traceId)
-        settingsStorage.save(true, for: .hasLoadedRemote, traceId: traceId)
+            logger.debug("Saving initial data", category: .persistence, traceId: traceId)
+            try await storage.upsert(todos, traceId: traceId)
+
+            logger.debug("Marking initial remote load as completed", category: .persistence, traceId: traceId)
+            settingsStorage.save(true, for: .hasLoadedRemote, traceId: traceId)
+        } catch {
+            let domainError = errorMapper.map(error)
+            logger.logError(domainError, category: .persistence, traceId: traceId)
+            throw domainError
+        }
     }
 
-    func fetch(id: UUID, traceId: UUID) async throws -> Todo? {
+    func fetch(id: UUID, traceId: UUID) async throws(DomainError) -> Todo? {
         do {
             return try await storage.fetch(id: id, traceId: traceId)
 
         } catch {
-            logger.logError(error, category: .persistence, traceId: traceId)
-            throw error
+            let domainError = errorMapper.map(error)
+            logger.logError(domainError, category: .persistence, traceId: traceId)
+            throw domainError
         }
     }
 
-    func create(todo: Todo, traceId: UUID) async throws {
-        logger.debug("Creating todo", category: .persistence, traceId: traceId)
-
+    func create(todo: Todo, traceId: UUID) async throws(DomainError) {
         do {
             try await storage.upsert([todo], traceId: traceId)
 
         } catch {
-            logger.logError(error, category: .persistence, traceId: traceId)
-            throw error
+            let domainError = errorMapper.map(error)
+            logger.logError(domainError, category: .persistence, traceId: traceId)
+            throw domainError
         }
     }
 
-    func update(todo: Todo, traceId: UUID) async throws {
+    func update(todo: Todo, traceId: UUID) async throws(DomainError) {
         do {
             try await storage.upsert([todo], traceId: traceId)
 
         } catch {
-            logger.logError(error, category: .persistence, traceId: traceId)
-            throw error
+            let domainError = errorMapper.map(error)
+            logger.logError(domainError, category: .persistence, traceId: traceId)
+            throw domainError
         }
+
     }
 
-    func delete(id: UUID, traceId: UUID) async throws {
+    func delete(id: UUID, traceId: UUID) async throws(DomainError) {
         do {
             try await storage.delete(id: id, traceId: traceId)
 
         } catch {
-            logger.logError(error, category: .persistence, traceId: traceId)
-            throw error
+            let domainError = errorMapper.map(error)
+            logger.logError(domainError, category: .persistence, traceId: traceId)
+            throw domainError
         }
     }
 
-    func toggleTodoCompletion(id: UUID, traceId: UUID) async throws {
+    func toggleTodoCompletion(id: UUID, traceId: UUID) async throws(DomainError) {
 
         do {
             if let todo = try await storage.fetch(id: id, traceId: traceId) {
@@ -137,12 +150,13 @@ final class DefaultTodoRepository: TodoRepository {
             }
 
         } catch {
-            logger.logError(error, category: .persistence, traceId: traceId)
-            throw error
+            let domainError = errorMapper.map(error)
+            logger.logError(domainError, category: .persistence, traceId: traceId)
+            throw domainError
         }
     }
 
-    func search(text: String, traceId: UUID) async throws {
+    func search(text: String, traceId: UUID)/* async throws(CoreError)*/ {
         storage.updateSearch(text: text)
     }
 }

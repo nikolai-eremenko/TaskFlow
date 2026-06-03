@@ -14,7 +14,8 @@ enum CoreAssemblies {
             LoggingAssembly(),
             AppInfoAssembly(),
             ErrorMapperAssembly(),
-            AppEnvironmentAssembly(environment: AppEnvironment.fromPlist())
+            AppEnvironmentAssembly(environment: AppEnvironment.fromPlist()),
+            VoiceInputAssemblyAssembly()
         ]
     }
 

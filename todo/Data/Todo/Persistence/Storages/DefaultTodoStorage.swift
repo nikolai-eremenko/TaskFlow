@@ -28,7 +28,25 @@ final class DefaultTodoStorage: TodoStorage {
 
     // MARK: - Public methods
 
-    func upsert(_ todos: [Todo], traceId: UUID) async throws {
+    func observeChanges() -> AsyncStream<TodoChange> {
+        AsyncStream { continuation in
+            let observer = TodoChangeObserver(context: storage.viewContext())
+
+            self.observer = observer
+
+            observer.onChange = { change in
+                continuation.yield(change)
+            }
+
+            observer.start()
+
+            continuation.onTermination = { _ in
+                self.observer = nil
+            }
+        }
+    }
+
+    func upsert(_ todos: [Todo], traceId: UUID) async throws(CoreError) {
         var metadata = LogMetadataBuilder()
         metadata.count(todos.count)
 
@@ -63,7 +81,7 @@ final class DefaultTodoStorage: TodoStorage {
         }
     }
 
-    func fetch(id: UUID, traceId: UUID) async throws -> Todo? {
+    func fetch(id: UUID, traceId: UUID) async throws(CoreError) -> Todo? {
         logger.debug("Fetching todo", category: .persistence, traceId: traceId)
 
         return try await storage.performViewTask(traceId: traceId) { context in
@@ -75,7 +93,7 @@ final class DefaultTodoStorage: TodoStorage {
         }
     }
 
-    func delete(id: UUID, traceId: UUID) async throws {
+    func delete(id: UUID, traceId: UUID) async throws(CoreError) {
 
         logger.debug("Deleting todo", category: .persistence, traceId: traceId)
 
@@ -86,7 +104,7 @@ final class DefaultTodoStorage: TodoStorage {
             request.fetchLimit = 1
 
             guard let entity = try context.fetch(request).first else {
-                let dataError = DataError.persistence(.notFound)
+                let dataError = CoreError.persistence(.notFound)
                 self.logger.logError(dataError, category: .persistence, traceId: traceId)
                 throw dataError
             }
@@ -98,23 +116,5 @@ final class DefaultTodoStorage: TodoStorage {
 
     func updateSearch(text: String) {
         observer?.updateSearch(text: text)
-    }
-
-    func observeChanges() -> AsyncStream<TodoChange> {
-        AsyncStream { continuation in
-            let observer = TodoChangeObserver(context: storage.viewContext())
-
-            self.observer = observer
-
-            observer.onChange = { change in
-                continuation.yield(change)
-            }
-
-            observer.start()
-
-            continuation.onTermination = { _ in
-                self.observer = nil
-            }
-        }
     }
 }

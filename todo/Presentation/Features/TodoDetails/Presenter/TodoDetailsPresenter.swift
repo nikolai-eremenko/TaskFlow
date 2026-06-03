@@ -100,14 +100,23 @@ extension TodoDetailsPresenter: TodoDetailsViewOutput {
 extension TodoDetailsPresenter: TodoDetailsInteractorOutput {
 
     func didFail(_ error: DomainError) {
-        view?.showError(message: error.localizedDescription)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            self.view?.showError(message: error.localizedDescription)
+        }
     }
 
     func didLoad(todo: Todo) {
-        originalTitle = todo.title
-        originalDescription = todo.taskDescription
 
-        view?.display(todo: todo)
-        view?.setSaveEnabled(false)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            self.originalTitle = todo.title
+            self.originalDescription = todo.taskDescription
+
+            self.view?.display(todo: todo)
+            self.view?.setSaveEnabled(false)
+        }
     }
 }

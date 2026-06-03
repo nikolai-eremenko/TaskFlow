@@ -11,6 +11,7 @@ enum DomainError: Error {
     case connection(ConnectionError)
     case server(ServerError)
     case storage(StorageError)
+    case voiceInput(VoiceInputError)
     case common(CommonError)
 }
 
@@ -22,6 +23,7 @@ extension DomainError: LogLevelProvider {
         case .server(let error):                return error.logLevel
         case .storage(let error):               return error.logLevel
         case .common(let error):                return error.logLevel
+        case .voiceInput(let error):            return error.logLevel
         }
     }
 }

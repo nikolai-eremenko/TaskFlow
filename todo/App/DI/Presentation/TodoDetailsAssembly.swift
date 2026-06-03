@@ -23,11 +23,10 @@ final class TodoDetailsAssembly {
 
         let logger = resolver.resolve(AppLogger.self)!
         let repository = resolver.resolve(TodoRepository.self)!
-        let errorMapper = resolver.resolve(ErrorMapper.self)!
 
         let interactor = TodoDetailsInteractor(
             repository: repository,
-            errorMapper: errorMapper
+            logger: logger
         )
 
         let router = TodoDetailsRouter(

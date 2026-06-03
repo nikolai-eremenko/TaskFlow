@@ -10,4 +10,7 @@ import Foundation
 protocol TodoListViewInput: AnyObject {
     func render(change: TodoListViewChange, todosCount: Int)
     func showError(message: String)
+
+    func updateSearchText(_ text: String)
+    func setVoiceInputState(_ state: VoiceInputStateUI)
 }

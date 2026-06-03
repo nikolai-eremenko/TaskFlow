@@ -12,16 +12,19 @@ final class TodoDetailsInteractor {
     weak var output: TodoDetailsInteractorOutput?
 
     private let repository: TodoRepository
-    private let errorMapper: ErrorMapper
+//    private let errorMapper: ErrorMapping
+    private let logger: AppLogger
 
     private var currentTodo: Todo?
 
     init(
         repository: TodoRepository,
-        errorMapper: ErrorMapper
+//        errorMapper: ErrorMapping,
+        logger: AppLogger
     ) {
         self.repository = repository
-        self.errorMapper = errorMapper
+//        self.errorMapper = errorMapper
+        self.logger = logger
     }
 
 }
@@ -45,8 +48,10 @@ extension TodoDetailsInteractor: TodoDetailsInteractorInput {
 
         } catch {
             let output = self.output
-            let domainError = errorMapper.map(error)
-            output?.didFail(domainError)
+//            let domainError = errorMapper.map(error)
+
+            logger.logError(error, category: .feature, traceId: traceId)
+            output?.didFail(error)
         }
     }
 
@@ -82,9 +87,9 @@ extension TodoDetailsInteractor: TodoDetailsInteractorInput {
 
         } catch {
             let output = self.output
-            let domainError = errorMapper.map(error)
+//            let domainError = errorMapper.map(error)
 
-            output?.didFail(domainError)
+            output?.didFail(error)
         }
     }
 }

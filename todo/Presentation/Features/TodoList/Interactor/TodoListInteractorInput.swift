@@ -13,4 +13,6 @@ protocol TodoListInteractorInput: AnyObject {
     func deleteTodo(id: UUID, traceId: UUID) async
     func toggleCompletion(id: UUID, traceId: UUID) async
     func searchTodos(text: String, traceId: UUID) async
+
+    func startVoiceInput(languageCode: String, _ traceId: UUID)
 }

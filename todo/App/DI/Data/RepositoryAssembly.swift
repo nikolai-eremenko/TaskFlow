@@ -18,8 +18,8 @@ final class RepositoryAssembly: Assembly {
         }
         .inObjectScope(.container)
 
-        container.register(TodoAPIService.self) { resolver in
-            DefaultTodoAPIService(
+        container.register(TodoRemoteService.self) { resolver in
+            DefaultTodoRemoteService(
                 network: resolver.resolve(NetworkService.self)!,
                 logger: resolver.resolve(AppLogger.self)!
             )
@@ -27,9 +27,10 @@ final class RepositoryAssembly: Assembly {
 
         container.register(TodoRepository.self) { resolver in
             DefaultTodoRepository(
-                api: resolver.resolve(TodoAPIService.self)!,
+                api: resolver.resolve(TodoRemoteService.self)!,
                 storage: resolver.resolve(TodoStorage.self)!,
                 settingsStorage: resolver.resolve(SettingsStorage.self)!,
+                errorMapper: resolver.resolve(ErrorMapping.self)!,
                 logger: resolver.resolve(AppLogger.self)!
             )
         }

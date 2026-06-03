@@ -1,5 +1,5 @@
 //
-//  TodoAPI.swift
+//  TodoTarget.swift
 //  todo
 //
 //  Created by Nikolai Eremenko on 16.04.2026.
@@ -9,7 +9,7 @@ import Foundation
 import Moya
 import Alamofire
 
-enum TodoAPI: AppTarget {
+enum TodoTarget: AppTarget {
 
     /// Fetch list of available countries
     ///
@@ -17,7 +17,7 @@ enum TodoAPI: AppTarget {
     case todos
 }
 
-extension TodoAPI: TargetType {
+extension TodoTarget: TargetType {
 
     /// Base URL is intentionally unused.
     ///

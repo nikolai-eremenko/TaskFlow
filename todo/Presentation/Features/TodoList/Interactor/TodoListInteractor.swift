@@ -12,21 +12,45 @@ final class TodoListInteractor {
     var output: TodoListInteractorOutput?
 
     private var observingTask: Task<Void, Never>?
+    private var voiceInputTask: Task<Void, Never>?
 
     private let repository: TodoRepository
+    private let voiceInputService: VoiceInputService
+    private let errorMapper: ErrorMapping
     private let logger: AppLogger
-    private let errorMapper: ErrorMapper
 
     // MARK: - Init
 
     init(
         repository: TodoRepository,
-        logger: AppLogger,
-        errorMapper: ErrorMapper
+        voiceInputService: VoiceInputService,
+        errorMapper: ErrorMapping,
+        logger: AppLogger
     ) {
         self.repository = repository
-        self.logger = logger
+        self.voiceInputService = voiceInputService
         self.errorMapper = errorMapper
+        self.logger = logger
+    }
+
+    // MARK: - Private Methods
+
+    private func handleVoiceEvent(_ event: VoiceInputEvent) {
+        switch event {
+
+        case .didStart:
+            output?.didStartVoiceInput()
+
+        case .didStop:
+            output?.didStopVoiceInput()
+
+        case .text(let text):
+            output?.didReceiveVoiceText(text)
+
+        case .error(let error):
+            let domainError = errorMapper.map(error)
+            output?.didFailVoiceInput(domainError)
+        }
     }
 }
 
@@ -61,10 +85,8 @@ extension TodoListInteractor: TodoListInteractorInput {
             )
 
         } catch {
-            logger.logError(error, category: .feature, traceId: traceId)
-
             await MainActor.run {
-                output?.didFail(errorMapper.map(error))
+                output?.didFail(error)
             }
         }
     }
@@ -77,7 +99,7 @@ extension TodoListInteractor: TodoListInteractorInput {
 
         } catch {
             await MainActor.run {
-                output?.didFail(errorMapper.map(error))
+                output?.didFail(error)
             }
         }
     }
@@ -95,21 +117,44 @@ extension TodoListInteractor: TodoListInteractorInput {
 
         } catch {
             await MainActor.run {
-                output?.didFail(errorMapper.map(error))
+                output?.didFail(error)
             }
         }
     }
 
     func searchTodos(text: String, traceId: UUID) async {
-        logger.debug("Searching todos", category: .feature, traceId: traceId)
+        repository.search(text: text, traceId: traceId)
+    }
+
+    func startVoiceInput(languageCode: String, _ traceId: UUID) {
+        logger.debug("Voice input started", category: .feature, traceId: traceId)
+
+        voiceInputTask?.cancel()
 
         do {
-            try await repository.search(text: text, traceId: traceId)
+            try voiceInputService.startRecording(languageCode: languageCode, traceId)
 
         } catch {
-            await MainActor.run {
-                output?.didFail(errorMapper.map(error))
+            let domainError = errorMapper.map(error)
+            logger.logError(domainError, category: .feature, traceId: traceId)
+            output?.didFailVoiceInput(domainError)
+            return
+        }
+
+        voiceInputTask = Task { [weak self] in
+            guard let self else { return }
+
+            for await event in self.voiceInputService.eventStream {
+                await MainActor.run {
+                    self.handleVoiceEvent(event)
+                }
             }
         }
+    }
+
+    func stopVoiceInput(_ traceId: UUID) {
+        voiceInputService.stop("Interactor", traceId)
+        voiceInputTask?.cancel()
+        voiceInputTask = nil
     }
 }
