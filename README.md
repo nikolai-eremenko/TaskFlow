@@ -1,4 +1,4 @@
-# Todo App
+# TaskFlow — iOS Task Management App
 ![iOS](https://img.shields.io/badge/iOS-17%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5-orange)
 ![UIKit](https://img.shields.io/badge/UIKit-Programmatic-black)
@@ -166,7 +166,7 @@ This allows easy testing and configuration switching during development.
 1. Clone the repository
 
 ```bash
-git clone https://github.com/nikolai-eremenko/todo
+git clone https://github.com/nikolai-eremenko/TaskFlow
 ```
 
 2. Open the project in Xcode
