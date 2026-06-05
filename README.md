@@ -8,6 +8,8 @@ A modern iOS Todo application built with a strong focus on clean architecture, s
 
 This project was originally created as a test assignment and later refined to demonstrate production-level engineering practices, architectural decisions, and code organization.
 
+<img src="https://github.com/user-attachments/assets/d6aece3f-6d56-44d3-bc40-9c3a5b7ee45d" width="280"/>
+
 ## Features
 
 * Display todo items in a list
@@ -148,8 +150,9 @@ This allows easy testing and configuration switching during development.
 ## Screenshots
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/d6aece3f-6d56-44d3-bc40-9c3a5b7ee45d" width="280"/>
-  <img src="https://github.com/user-attachments/assets/354c52e5-d722-4401-9e0a-3cb461d7d3c3" width="280"/>
+  <img src="https://github.com/user-attachments/assets/b5cbd8f3-0dc3-41e2-a9f5-af15f017a7a9" width="280"/>
+  <img src="https://github.com/user-attachments/assets/6734a9ef-ec9e-4b9c-b3a7-1434f6d94fdb" width="280"/>
+  <img src="https://github.com/user-attachments/assets/77a1cc43-8940-4fb1-af21-59933ad17d93" width="280"/>
 </p>
 
 ## Requirements
